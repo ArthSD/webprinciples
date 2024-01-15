@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Straight-Line Forecasting</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .nav ul li a {
+            padding: 12px 16px;
+            /* Padding for submenu items */
+            text-decoration: none;
+            color: #000;
+            display: block;
+            text-align: left;
+            /* Align submenu text */
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fcfcfc;
+            /* margin: 10px 20px 0; Adjust the margin at the top and remove margin at the bottom */
+        }
+
+        h1 {
+            text-align: center;
+            background-color: #fcfcfc;
+            margin: 0;
+            /* Eliminate margin */
+            padding: 0;
+            /* Eliminate padding */
+        }
+
+        #chart_div {
+            width: 90%;
+            /* Set the width to 100% or your desired width */
+            height: 800px;
+            margin: 0 auto;
+            /* Reduce margin at the top and bottom of the chart */
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            white-space: nowrap;
+            cursor: grab;
+        }
+
+        @media (max-width: 500px){
+            #chart_div {
+                width: 80%;
+            }
+        }
+    </style>
+   
+</head>
+
+<body>
+        <h1>Straight-Line Forecasting <a href="index.html"><img src="img/close_black.png" style="width: 50px; height: 50px;"></a></h1>
+        <br/>
+    <div id="chart_div"></div>
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+
+        google.charts.load('current', { packages: ['corechart'] });
+
+        google.charts.setOnLoadCallback(function () {
+            if (google.visualization !== undefined) {
+                drawChart();
+            } else {
+                console.error("Google Charts library not loaded.");
+            }
+        });
+
+        function drawChart() {
+            // Historical data
+            const historicalData = google.visualization.arrayToDataTable([
+                ['Months', 'Solid Fuel', 'Gas Fuel', 'Electricity', 'Liquid Fuel'],
+                ['Jan', 130.3, 102.4, 155.2, 85.9],
+                ['Feb', 130.1, 102.4, 155.2, 92.2],
+                ['Mar', 130.3, 102.4, 155.2, 94.8],
+                ['Apr', 130.4, 112.0, 169.4, 90.6],
+                ['May', 130.3, 112.0, 169.4, 94.8],
+                ['Jun', 130.6, 112.0, 169.4, 97.8],
+                ['Jul', 130.6, 112.0, 169.7, 98.3],
+                ['Aug', 130.5, 112.0, 169.7, 97.1],
+                ['Sep', 131.2, 112.0, 169.7, 101.5],
+                ['Oct', 132.6, 131.1, 184.4, 120.5],
+                ['Nov', 133.1, 131.1, 184.4, 125.0],
+                ['Dec', 136.8, 131.1, 184.4, 121.2],
+                // Add more months as needed
+            ]);
+
+            // Forecast data
+            const forecastData = generateForecastData(historicalData);
+
+            // Set chart options.
+            const options = {
+                title: 'Energy Costs Forecast',
+                curveType: 'function',
+                legend: { position: 'bottom' }
+            };
+
+            // Instantiate and draw the chart.
+            const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+            // Draw the forecast data only (without historical data)
+            chart.draw(forecastData, options);
+        }
+
+        function generateForecastData(historicalData) {
+            const forecastData = new google.visualization.DataTable();
+            forecastData.addColumn('string', 'Months');
+            forecastData.addColumn('number', 'Solid Fuel Forecast');
+            forecastData.addColumn('number', 'Gas Fuel Forecast');
+            forecastData.addColumn('number', 'Electricity Forecast');
+            forecastData.addColumn('number', 'Liquid Fuel Forecast');
+
+            const numberOfHistoricalMonths = historicalData.getNumberOfRows();
+            const numberOfForecastMonths = 12; // Assuming 12 forecast months
+
+            for (let i = numberOfHistoricalMonths; i < numberOfHistoricalMonths + numberOfForecastMonths; i++) {
+                const month = `Forecast ${i - numberOfHistoricalMonths + 1}`;
+                const row = [month, null, null, null, null]; // Initialize row with null values
+
+                for (let fuelType = 1; fuelType <= 4; fuelType++) {
+                    const regressionValues = performLinearRegression(historicalData, fuelType);
+                    const x = i - numberOfHistoricalMonths + 1;
+                    const forecastValue = isNaN(regressionValues.slope) || isNaN(regressionValues.intercept) ? null : regressionValues.intercept + regressionValues.slope * x;
+                    row[fuelType] = forecastValue; // Set the forecast value at the appropriate index
+                }
+
+                forecastData.addRow(row);
+            }
+
+            console.log(forecastData); // Log the forecast data to the console
+            return forecastData;
+        }
+
+
+
+        function performLinearRegression(dataTable, column) {
+            const xValues = [];
+            const yValues = [];
+
+            // Populate x and y values from historical data
+            for (let i = 0; i < dataTable.getNumberOfRows(); i++) {
+                const x = i + 1; // Assuming x-values are sequential integers starting from 1
+                const y = dataTable.getValue(i, column);
+
+                if (!isNaN(y)) {
+                    xValues.push(x);
+                    yValues.push(y);
+                }
+            }
+
+            // Perform linear regression
+            const n = xValues.length;
+            const sumX = xValues.reduce((acc, x) => acc + x, 0);
+            const sumY = yValues.reduce((acc, y) => acc + y, 0);
+            const sumXY = xValues.reduce((acc, x, i) => acc + x * yValues[i], 0);
+            const sumX2 = xValues.reduce((acc, x) => acc + x ** 2, 0);
+
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX ** 2);
+            const intercept = (sumY - slope * sumX) / n;
+
+            return { slope, intercept };
+        }
+
+        function calculateSlope(data, fuelType) {
+            const n = data.getNumberOfRows();
+
+            // Get the values for the specified fuelType and the first column (months)
+            const xyValues = data.getFilteredRows([{ column: 0 }, { column: fuelType }]);
+            const xValues = data.getFilteredRows([{ column: 0, minValue: 0 }]); // Filter rows where x is greater than or equal to 0
+            const yValues = data.getFilteredRows([{ column: fuelType, minValue: 0 }]); // Filter rows where y is greater than or equal to 0
+
+            // Check if any of the arrays is empty
+            if (xyValues.length === 0 || xValues.length === 0 || yValues.length === 0) {
+                console.error("Empty array detected. Returning 0.");
+                return 0; // Return 0 if any of the arrays is empty to avoid division by zero
+            }
+
+            // Calculate the sum of xy, x, y, and x^2
+            let sumXY = 0;
+            let sumX = 0;
+            let sumY = 0;
+            let sumX2 = 0;
+
+            for (let i = 0; i < xyValues.length; i++) {
+                const x = data.getValue(xyValues[i], 0);
+                const y = data.getValue(xyValues[i], fuelType);
+                sumXY += x * y;
+                sumX += x;
+                sumY += y;
+                sumX2 += Math.pow(x, 2);
+            }
+
+            // Calculate the slope only if the denominator is not zero
+            const denominator = n * sumX2 - Math.pow(sumX, 2);
+            if (denominator === 0) {
+                console.error("Denominator is zero. Returning 0.");
+                return 0;
+            }
+
+            return (n * sumXY - sumX * sumY) / denominator;
+        }
+
+        function calculateIntercept(data, fuelType) {
+            const n = data.getNumberOfRows();
+
+            // Calculate the sum for the specified fuelType and the first column (months)
+            let sumX = 0;
+            let sumY = 0;
+
+            for (let i = 0; i < n; i++) {
+                sumX += data.getValue(i, 0);
+                sumY += data.getValue(i, fuelType);
+            }
+
+            const slope = calculateSlope(data, fuelType);
+
+            return (sumY - slope * sumX) / n;
+        }
+
+
+    </script>
+</body>
+
+</html>

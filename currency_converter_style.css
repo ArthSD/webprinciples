@@ -1,0 +1,72 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #fcfcfc;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-image: url('img/currencyImage.svg'); 
+    background-size: 100% 100%;
+    background-size:cover; 
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+
+  
+  .converter {
+    background-color: #fff;
+    width: 500px;
+    height: 600px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  h1 {
+    text-align: center;
+  }
+  
+  label,
+  select,
+  input {
+    margin-bottom: 10px;
+    display: block;
+    width: 500px;
+  }
+  
+  input {
+    padding: 5px;
+    width: 485px;
+  }
+  
+  button {
+    padding: 8px 16px;
+    background-color: #9f5264;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 500px;
+  }
+  
+  button:hover {
+    background-color: #9a707a;
+  }
+
+  .uppercase {
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 500px){
+    body {
+      background-size: contain;
+      background-size: 50% 50%;
+  }
+    .converter {
+      width: 90%;
+      height: 90%;
+    }
+  }
+  
